@@ -1,0 +1,16 @@
+{
+    "mcpServers": {
+        "tmdb-server": {
+            "command": "C:/Users/jinat/AppData/Local/Microsoft/WindowsApps/python.exe",
+            "args": [
+                "C:/Users/jinat/source/repos/mcp-a2a/tmdb-mcp-server/main.py"
+            ]
+        },
+        "spotify-server": {
+            "command": "C:/Users/jinat/AppData/Local/Microsoft/WindowsApps/python.exe",
+            "args": [
+                "C:/Users/jinat/source/repos/mcp-a2a/spotify-mcp-server/main.py"
+            ]
+        }
+    }
+}

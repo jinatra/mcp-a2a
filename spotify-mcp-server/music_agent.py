@@ -7,7 +7,8 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import os
 import logging
 from dotenv import load_dotenv
-    
+
+# 환경 변수 로드
 load_dotenv()
 
 # 로깅 설정

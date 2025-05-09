@@ -1,35 +1,73 @@
-from flask import Flask, request, jsonify
-import requests
+from mcp.server.fastmcp import FastMCP
+from fastmcp import Client
+import openai
+import os
+from dotenv import load_dotenv
+import logging
+import json
 
-app = Flask(__name__)
+# 환경 변수 로드
+load_dotenv()
 
-TMDB_URL = "http://localhost:5001/movie/search"      # tmdb-mcp-server 주소
-SPOTIFY_URL = "http://localhost:5002/music/search"   # spotify-mcp-server 주소
+# 로깅 설정
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
-@app.route('/recommend')
-def recommend():
-    query = request.args.get('query')
-    if not query:
-        return jsonify({'error': 'No query provided'}), 400
+# OpenAI API 키 설정
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-    # 두 MCP 서버에 동시에 쿼리
-    movie_resp = requests.get(TMDB_URL, params={'query': query})
-    music_resp = requests.get(SPOTIFY_URL, params={'query': query})
+try:
+    mcp = FastMCP(name="a2a_communicator")
+    logger.info("MCP 서버 초기화 성공")
 
-    movie_data = movie_resp.json() if movie_resp.status_code == 200 else {}
-    music_data = music_resp.json() if music_resp.status_code == 200 else {}
+    async def determine_target_mcp(query: str) -> str:
+        """사용자 질문을 분석하여 적절한 MCP 서버를 결정합니다."""
+        try:
+            response = await openai.ChatCompletion.acreate(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "당신은 사용자의 질문을 분석하여 영화(TMDB) 또는 음악(Spotify) 중 어떤 서비스에 대한 질문인지 판단하는 AI입니다. 'movie' 또는 'music' 중 하나만 반환하세요."},
+                    {"role": "user", "content": query}
+                ]
+            )
+            return response.choices[0].message.content.strip().lower()
+        except Exception as e:
+            logger.error(f"OpenAI API 호출 중 오류 발생: {str(e)}")
+            raise Exception("서비스 분석 중 오류가 발생했습니다.")
 
-    # 결과가 있는 쪽만 반환 (둘 다 있으면 둘 다)
-    result = {}
-    if movie_data.get('movies'):
-        result['movie'] = movie_data['movies']
-    if music_data.get('tracks'):
-        result['music'] = music_data['tracks']
+    async def forward_to_mcp(query: str, target: str) -> dict:
+        """선택된 MCP 서버로 요청을 전달합니다."""
+        try:
+            if target == "movie":
+                async with Client("http://localhost:8001/sse") as client:
+                    response = await client.call_tool("get_movie_info_by_title", {"query": query})
+                    return {"response": response, "source": "TMDB"}
+            else:  # music
+                async with Client("http://localhost:8002/sse") as client:
+                    response = await client.call_tool("get_music_info_by_title", {"query": query})
+                    return {"response": response, "source": "Spotify"}
+        except Exception as e:
+            logger.error(f"MCP 서버 통신 중 오류 발생: {str(e)}")
+            raise Exception("MCP 서버 통신 중 오류가 발생했습니다.")
 
-    if not result:
-        return jsonify({'message': '검색 결과가 없습니다.'}), 404
+    @mcp.tool()
+    async def process_query(query: str) -> dict:
+        """사용자 질문을 처리하고 적절한 MCP 서버로 전달합니다."""
+        try:
+            # 1. 적절한 MCP 서버 결정
+            target = await determine_target_mcp(query)
+            
+            # 2. 선택된 MCP 서버로 요청 전달
+            response = await forward_to_mcp(query, target)
+            
+            return response
+        except Exception as e:
+            logger.error(f"쿼리 처리 중 오류 발생: {str(e)}")
+            raise Exception(str(e))
 
-    return jsonify(result)
+    if __name__ == "__main__":
+        logger.info("A2A Communicator 서버 시작")
+        mcp.run(transport="sse")
 
-if __name__ == '__main__':
-    app.run(port=5000)
+except Exception as e:
+    logger.error(f"서버 실행 중 오류 발생: {str(e)}", exc_info=True)

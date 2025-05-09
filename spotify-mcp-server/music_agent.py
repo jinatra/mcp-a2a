@@ -7,13 +7,14 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import os
 import logging
 from dotenv import load_dotenv
+    
+load_dotenv()
 
 # 로깅 설정
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 try:
-    load_dotenv()
     SPOTIFY_CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID')
     SPOTIFY_CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
     if not SPOTIFY_CLIENT_ID or not SPOTIFY_CLIENT_SECRET:
@@ -33,6 +34,7 @@ try:
         """
         logger.info(f"스포티파이 API 호출: {query}")
         results = sp.search(q=query, type='track', limit=5)
+        logger.info(f"Spotify API 결과: {results}")
         tracks = []
         for item in results['tracks']['items']:
             tracks.append({

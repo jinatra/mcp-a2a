@@ -46,7 +46,7 @@ try:
         return JSONResponse({"echo": data})
 
     if __name__ == "__main__":
-        logger.info("MCP 서버 시작")
+        logger.info("TMDB MCP 서버 시작")
         mcp.run(transport="sse")
 
 except Exception as e:

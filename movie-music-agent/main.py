@@ -29,14 +29,16 @@ class MovieMusicAgent(A2AServer):
         tags=["movie", "tmdb"]
     )
     async def get_movie_info(self, query: str) -> Dict[str, Any]:
-        """Get movie information from TMDB."""
+        """TMDB에서 영화 정보를 검색하여 반환"""
         try:
+            # Client 클래스를 사용하여 MCP 서버에 연결
             async with Client("http://localhost:8001/sse") as client:
                 clean_query = query.replace("get__info_by_title", "").strip()
                 logger.info(f"TMDB MCP 서버 호출: {clean_query}")
                 
                 # 비동기 호출을 동기적으로 처리
                 result = await asyncio.wait_for(
+                    # call_tool 메서드로 MCP 서버의 도구 호출
                     client.call_tool("get_movie_info_by_title", {"query": clean_query}),
                     timeout=10.0
                 )
@@ -89,8 +91,9 @@ class MovieMusicAgent(A2AServer):
         tags=["music", "spotify"]
     )
     async def get_music_info(self, query: str) -> Dict[str, Any]:
-        """Get music information from Spotify."""
+        """Spotify에서 음악 정보를 검색하여 반환"""
         try:
+            # Client 클래스를 사용하여 MCP 서버에 연결
             async with Client("http://localhost:8002/sse") as client:
                 # 쿼리에서 get__info_by_title 제거
                 clean_query = query.replace("get__info_by_title", "").strip()
@@ -98,6 +101,7 @@ class MovieMusicAgent(A2AServer):
                 
                 # 비동기 호출을 동기적으로 처리
                 result = await asyncio.wait_for(
+                    # call_tool 메서드로 MCP 서버의 도구 호출
                     client.call_tool("get_music_info_by_title", {"query": clean_query}),
                     timeout=10.0
                 )

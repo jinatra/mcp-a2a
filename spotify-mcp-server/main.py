@@ -12,10 +12,10 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 try:
-    mcp = FastMCP(name="spotify_music_agent")
+    mcp = FastMCP(name="spotify_music_agent") # MCP 서버의 고유 식별자 → 다른 서버들이 이 MCP 서버를 식별 가능
     logger.info("MCP 서버 초기화 성공")
 
-    @mcp.tool()
+    @mcp.tool() # mcp.tool() 데코레이터로 등록된 함수들이 MCP 서버의 도구로 등록
     def get_music_info_by_title(query: str) -> list:
         try:
             """

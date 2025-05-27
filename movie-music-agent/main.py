@@ -144,13 +144,6 @@ class MovieMusicAgent(A2AServer):
                 }]
             }
     
-    def log_task_response(self, task):
-        """Task 응답 데이터를 로깅하는 함수"""
-        logger.info("Agent Client에게 전송될 응답:")
-        logger.info(f"Task ID: {task.id}")
-        logger.info(f"Status: {task.status.state}")
-        logger.info(f"Artifacts: {json.dumps(task.artifacts, indent=2, ensure_ascii=False)}")
-    
     def handle_task(self, task):
         try:
             # Extract query from message
@@ -169,7 +162,13 @@ class MovieMusicAgent(A2AServer):
                 task.status = TaskStatus(state=TaskState.COMPLETED)                         #작업이 성공적으로 완료되었음을 나타냄 → 처리된 결과는 Agent Client에게 JSON-RPC 2.0 형식으로 반환됨
                 
                 # 응답 데이터 로깅 추가
-                self.log_task_response(task)
+                logger.info("================================")
+                logger.info("영화 에이전트 선택 => TMDB MCP 서버 호출")
+                logger.info("Agent Client에게 전송될 응답:")
+                logger.info(f"Task ID: {task.id}")
+                logger.info(f"Status: {task.status.state}")
+                logger.info(f"Artifacts: {json.dumps(task.artifacts, indent=2, ensure_ascii=False)}")
+                logger.info("================================")
                 
             elif "음악" in text or "music" in text.lower() or "노래" in text:
                 query = text.replace("음악", "").replace("music", "").replace("노래", "").strip().rstrip("?.")
@@ -179,7 +178,13 @@ class MovieMusicAgent(A2AServer):
                 task.status = TaskStatus(state=TaskState.COMPLETED)                         #작업이 성공적으로 완료되었음을 나타냄 → 처리된 결과는 Agent Client에게 JSON-RPC 2.0 형식으로 반환됨
                 
                 # 응답 데이터 로깅 추가
-                self.log_task_response(task)
+                logger.info("================================")
+                logger.info("음악 에이전트 선택 => Spotify MCP 서버 호출")
+                logger.info("Agent Client에게 전송될 응답:")
+                logger.info(f"Task ID: {task.id}")
+                logger.info(f"Status: {task.status.state}")
+                logger.info(f"Artifacts: {json.dumps(task.artifacts, indent=2, ensure_ascii=False)}")
+                logger.info("================================")
 
             else:
                 task.status = TaskStatus(
@@ -244,8 +249,10 @@ async def get_agent_info():
     }
     
     # 로그 추가
+    logger.info("================================")
     logger.info("Agent 정보 요청 받음")
     logger.info(f"반환할 Agent 정보: {json.dumps(agent_info, indent=2, ensure_ascii=False)}")
+    logger.info("================================")
     
     return JSONResponse(agent_info)
 
